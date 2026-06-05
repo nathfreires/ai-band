@@ -34,7 +34,7 @@ export function Host() {
   const [players, setPlayers] = useState<Players>(emptyPlayers());
   const [beat, setBeat] = useState(-1);
   const [showQr, setShowQr] = useState(false);
-  const [autoBeat, setAutoBeat] = useState(true);
+  const [autoBeat, setAutoBeat] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const beatCounter = useRef(0);
@@ -54,6 +54,22 @@ export function Host() {
     window.setTimeout(() => el.classList.remove("pulse"), 260);
   }, []);
 
+  // Start the auto player: the full fake band in demo, the tamborzao loop live.
+  const startAuto = useCallback(
+    (engine: ReturnType<typeof getEngine>): (() => void) => {
+      if (demo) {
+        setSlots(DEMO_SLOTS);
+        const stop = startDemo(engine);
+        return () => {
+          stop();
+          setSlots(emptySlots());
+        };
+      }
+      return startTamborzao(engine);
+    },
+    [demo],
+  );
+
   const begin = useCallback(async () => {
     const engine = getEngine();
     await engine.start();
@@ -71,10 +87,7 @@ export function Host() {
     transport.start();
 
     const cleanups: Array<() => void> = [];
-    if (demo) {
-      setSlots(DEMO_SLOTS);
-      cleanups.push(startDemo(engine));
-    } else if (firebaseReady) {
+    if (!demo && firebaseReady) {
       // Every phone tap is quantized to the host clock before it sounds.
       const offEvents = watchEvents(roomId, (ev) => {
         // Quantize to the next 16th, then nudge slightly so it grooves
@@ -87,21 +100,19 @@ export function Host() {
       cleanups.push(offEvents, offSlots, offPlayers);
     }
 
-    // Built-in tamborzao auto beat the live drum player can tap over.
-    if (!demo && autoBeat) {
-      drumLoopRef.current = startTamborzao(engine);
-    }
+    // Nothing auto plays on load. The auto beat only runs once enabled.
+    if (autoBeat) drumLoopRef.current = startAuto(engine);
 
     setStarted(true);
     cleanupRef.current = () => cleanups.forEach((c) => c());
-  }, [autoBeat, bpm, demo, pulseSection, roomId]);
+  }, [autoBeat, bpm, demo, pulseSection, roomId, startAuto]);
 
   const toggleAutoBeat = () => {
     setAutoBeat((prev) => {
       const next = !prev;
-      if (started && !demo) {
+      if (started) {
         if (next && !drumLoopRef.current) {
-          drumLoopRef.current = startTamborzao(getEngine());
+          drumLoopRef.current = startAuto(getEngine());
         } else if (!next && drumLoopRef.current) {
           drumLoopRef.current();
           drumLoopRef.current = null;
@@ -194,15 +205,13 @@ export function Host() {
 
         <div className="hostbar-right">
           {demo ? <span className="pill demo-tag mono">DEMO</span> : null}
-          {!demo ? (
-            <button
-              className={`pill mono ${autoBeat ? "pill-on" : ""}`}
-              onClick={toggleAutoBeat}
-              title="Toggle the built-in tamborzao beat"
-            >
-              AUTO BEAT {autoBeat ? "ON" : "OFF"}
-            </button>
-          ) : null}
+          <button
+            className={`pill mono ${autoBeat ? "pill-on" : ""}`}
+            onClick={toggleAutoBeat}
+            title="Toggle the built-in tamborzao beat"
+          >
+            AUTO BEAT {autoBeat ? "ON" : "OFF"}
+          </button>
           <span className="pill mono">
             {firebaseReady ? "RTDB LIVE" : "RTDB OFF"}
           </span>
