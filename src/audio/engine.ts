@@ -28,7 +28,7 @@ export class AudioEngine {
   private hatFilter: Tone.Filter;
   private shakerNoise: Tone.NoiseSynth;
   private shakerFilter: Tone.Filter;
-  private whistle: Tone.Synth;
+  private agogo: Tone.MetalSynth;
   private vocalNoise: Tone.NoiseSynth;
   private vocalFilter: Tone.Filter;
 
@@ -135,12 +135,16 @@ export class AudioEngine {
     }).connect(this.shakerFilter);
     this.shakerNoise.volume.value = -11;
 
-    // Whistle / apito: quick high triangle blip.
-    this.whistle = new Tone.Synth({
-      oscillator: { type: "triangle" },
-      envelope: { attack: 0.004, decay: 0.12, sustain: 0, release: 0.04 },
+    // Agogo: metallic bell accent.
+    this.agogo = new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 0.18, release: 0.05 },
+      harmonicity: 5.1,
+      modulationIndex: 32,
+      resonance: 4000,
+      octaves: 1.4,
     }).connect(this.drumBus);
-    this.whistle.volume.value = -9;
+    this.agogo.frequency.value = 760;
+    this.agogo.volume.value = -16;
 
     // Vocal stab: short percussive "ha", a pitched noise burst with a vowel
     // like filter movement.
@@ -224,10 +228,8 @@ export class AudioEngine {
       case "shaker":
         this.shakerNoise.triggerAttackRelease("8n", time);
         break;
-      case "whistle":
-        // Two quick blips give the apito its trill.
-        this.whistle.triggerAttackRelease(2300, "32n", time);
-        this.whistle.triggerAttackRelease(2650, "32n", time + 0.05);
+      case "agogo":
+        this.agogo.triggerAttackRelease(760, "16n", time);
         break;
       case "vocal": {
         this.vocalFilter.frequency.setValueAtTime(800, time);
@@ -286,7 +288,7 @@ export class AudioEngine {
     this.hatFilter.dispose();
     this.shakerNoise.dispose();
     this.shakerFilter.dispose();
-    this.whistle.dispose();
+    this.agogo.dispose();
     this.vocalNoise.dispose();
     this.vocalFilter.dispose();
     this.drumDist.dispose();

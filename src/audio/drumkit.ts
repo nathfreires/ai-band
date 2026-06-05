@@ -25,6 +25,6 @@ export const DRUM_PADS: DrumPadDef[] = [
   { id: "snare", label: "SNARE", sub: "rim", key: "f", note: () => "snare" },
   { id: "hat", label: "HAT", sub: "hat", key: "g", note: () => "hat" },
   { id: "shaker", label: "SHAKER", sub: "ganzá", key: "h", note: () => "shaker" },
-  { id: "whistle", label: "WHISTLE", sub: "apito", key: "j", note: () => "whistle" },
+  { id: "agogo", label: "AGOGÔ", sub: "bell", key: "j", note: () => "agogo" },
   { id: "vocal", label: "VOCAL", sub: "ha", key: "k", note: () => "vocal" },
 ];
