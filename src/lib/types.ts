@@ -26,6 +26,7 @@ export type Slots = Record<Instrument, string | null>;
 // photo thumbnail stored directly in Realtime Database (no Firebase Storage).
 export interface PlayerRecord {
   id: string;
+  name?: string;
   photo?: string;
   t?: number;
 }

@@ -271,9 +271,13 @@ button {
 
 .sec-owner {
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: rgba(7, 18, 26, 0.72);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: rgba(7, 18, 26, 0.82);
+  max-width: 60vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sec-owner.vacant {
@@ -334,6 +338,30 @@ button {
   color: var(--accent);
   letter-spacing: 0.2em;
   font-size: 13px;
+}
+
+.name-input {
+  width: 240px;
+  max-width: 80vw;
+  text-align: center;
+  background: var(--panel-2);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  padding: 14px 16px;
+  outline: none;
+  text-transform: uppercase;
+}
+
+.name-input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0.2em;
+}
+
+.name-input:focus {
+  box-shadow: 0 0 22px var(--glow);
 }
 
 .photo-actions {

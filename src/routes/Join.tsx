@@ -10,6 +10,7 @@ import {
   getPlayerId,
   releaseSlot,
   sendEvent,
+  setName,
   setPhoto,
   watchSlots,
 } from "../lib/room";
@@ -25,7 +26,11 @@ export function Join() {
   const [mine, setMine] = useState<Instrument | null>(null);
   const [step, setStep] = useState<Step>("photo");
   const [photo, setLocalPhoto] = useState<string>("");
+  const [name, setLocalName] = useState<string>(
+    () => localStorage.getItem("aiband.name") ?? "",
+  );
   const [busy, setBusy] = useState(false);
+  const NAME_MAX = 24;
   const fileRef = useRef<HTMLInputElement>(null);
   const claimKey = `aiband.claim.${roomId}`;
 
@@ -60,7 +65,15 @@ export function Join() {
       setMine(inst);
       setStep("photo");
       setLocalPhoto("");
+      if (name.trim()) setName(roomId, inst, playerId, name.trim());
     }
+  };
+
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, NAME_MAX);
+    setLocalName(value);
+    localStorage.setItem("aiband.name", value);
+    if (mine) setName(roomId, mine, playerId, value.trim());
   };
 
   const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,8 +135,17 @@ export function Join() {
               <span className="photo-ph mono">ADD PHOTO</span>
             )}
           </div>
+          <input
+            className="name-input mono"
+            type="text"
+            inputMode="text"
+            maxLength={NAME_MAX}
+            placeholder="YOUR NAME"
+            value={name}
+            onChange={onNameChange}
+          />
           <p className="ghost mono">
-            Take a photo so the host can see who is playing {mine}.
+            Add your name and a photo so the host can see who is playing {mine}.
           </p>
           <input
             ref={fileRef}

@@ -164,6 +164,8 @@ export function Host() {
         {INSTRUMENTS.map((inst) => {
           const owner = slots[inst];
           const photo = players[inst]?.photo;
+          const name = players[inst]?.name?.trim();
+          const label = owner ? name || owner : "OPEN";
           const accent = COLORS[inst];
           return (
             <div
@@ -188,8 +190,11 @@ export function Host() {
               </div>
               <div className="sec-label">
                 <span className="sec-name">{inst.toUpperCase()}</span>
-                <span className={`sec-owner ${owner ? "" : "vacant"}`}>
-                  {owner ? owner : "OPEN"}
+                <span
+                  className={`sec-owner ${owner ? "" : "vacant"}`}
+                  title={label}
+                >
+                  {label}
                 </span>
               </div>
             </div>

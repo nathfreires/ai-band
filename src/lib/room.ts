@@ -3,7 +3,7 @@ import {
   onValue,
   onChildAdded,
   push,
-  set,
+  update,
   remove,
   runTransaction,
   serverTimestamp,
@@ -84,7 +84,7 @@ export function watchPlayers(
 }
 
 // Phone side. Store a downscaled base64 thumbnail for this player in RTDB. No
-// Firebase Storage is used.
+// Firebase Storage is used. Merges so it does not clobber the name.
 export function setPhoto(
   roomId: string,
   instrument: Instrument,
@@ -92,9 +92,25 @@ export function setPhoto(
   photo: string,
 ): void {
   if (!db) return;
-  void set(ref(db, `rooms/${roomId}/players/${instrument}`), {
+  void update(ref(db, `rooms/${roomId}/players/${instrument}`), {
     id: playerId,
     photo,
+    t: Date.now(),
+  });
+}
+
+// Phone side. Store the player's display name. Merges so it does not clobber
+// the photo.
+export function setName(
+  roomId: string,
+  instrument: Instrument,
+  playerId: string,
+  name: string,
+): void {
+  if (!db) return;
+  void update(ref(db, `rooms/${roomId}/players/${instrument}`), {
+    id: playerId,
+    name,
     t: Date.now(),
   });
 }
