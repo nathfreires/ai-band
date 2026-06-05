@@ -63,54 +63,55 @@ function write(rel, samples) {
 
 const TAU = Math.PI * 2;
 
-// Drums
+// Baile funk / tamborzao drum kit.
+// Deep surdo style kick with a long body.
 write(
   "drums/kick.wav",
-  render(0.4, (t, i, n) => {
-    const f = 120 * Math.exp(-t * 24) + 45;
-    return Math.sin(TAU * f * t) * env(i, n, 0.001, 0.25) * 0.9;
+  render(0.5, (t, i, n) => {
+    const f = 110 * Math.exp(-t * 18) + 44;
+    const click = noise() * Math.exp(-t * 90) * 0.2;
+    return (Math.sin(TAU * f * t) + click) * env(i, n, 0.001, 0.3) * 0.95;
   }),
 );
-write(
-  "drums/snare.wav",
-  render(0.22, (t, i, n) => {
-    const tone = Math.sin(TAU * 185 * t) * 0.4;
-    return (noise() * 0.8 + tone) * env(i, n, 0.001, 0.3);
-  }),
-);
-write(
-  "drums/hat.wav",
-  render(0.06, (t, i, n) => noise() * env(i, n, 0.001, 0.15) * 0.6),
-);
-write(
-  "drums/openhat.wav",
-  render(0.3, (t, i, n) => noise() * env(i, n, 0.001, 0.4) * 0.5),
-);
+// Layered clap.
 write(
   "drums/clap.wav",
-  render(0.18, (t, i, n) => {
-    const burst = Math.floor(t * 90) % 2 === 0 ? 1 : 0.4;
-    return noise() * env(i, n, 0.001, 0.35) * 0.7 * burst;
+  render(0.2, (t, i, n) => {
+    const burst = Math.floor(t * 95) % 2 === 0 ? 1 : 0.4;
+    return noise() * env(i, n, 0.001, 0.35) * 0.75 * burst;
   }),
 );
+// Tight snare.
+write(
+  "drums/snare.wav",
+  render(0.2, (t, i, n) => {
+    const tone = Math.sin(TAU * 190 * t) * 0.35;
+    return (noise() * 0.85 + tone) * env(i, n, 0.001, 0.28);
+  }),
+);
+// Rim click.
 write(
   "drums/rim.wav",
   render(0.05, (t, i, n) => {
     return (Math.sin(TAU * 1700 * t) * 0.6 + noise() * 0.4) * env(i, n, 0.0005, 0.12);
   }),
 );
+// Tamborzao membrane hits at descending pitches with a noise transient.
+const tambor = (freq) =>
+  render(0.16, (t, i, n) => {
+    const f = freq * Math.exp(-t * 14) + freq * 0.6;
+    const skin = noise() * Math.exp(-t * 40) * 0.35;
+    return (Math.sin(TAU * f * t) * 0.8 + skin) * env(i, n, 0.0008, 0.22) * 0.9;
+  });
+write("drums/tam1.wav", tambor(420));
+write("drums/tam2.wav", tambor(300));
+write("drums/tam3.wav", tambor(210));
+// High percussion accent (agogo / shaker style).
 write(
-  "drums/tom.wav",
-  render(0.3, (t, i, n) => {
-    const f = 180 * Math.exp(-t * 10) + 90;
-    return Math.sin(TAU * f * t) * env(i, n, 0.001, 0.35) * 0.8;
-  }),
-);
-write(
-  "drums/ride.wav",
-  render(0.5, (t, i, n) => {
-    const tone = Math.sin(TAU * 5200 * t) * 0.3 + Math.sin(TAU * 7100 * t) * 0.2;
-    return (noise() * 0.4 + tone) * env(i, n, 0.001, 0.6) * 0.4;
+  "drums/perc.wav",
+  render(0.08, (t, i, n) => {
+    const tone = Math.sin(TAU * 900 * t) * 0.3;
+    return (noise() * 0.7 + tone) * env(i, n, 0.0005, 0.16) * 0.6;
   }),
 );
 
@@ -123,8 +124,8 @@ function tone(freq, seconds, partials) {
   });
 }
 
-// bass at C2 (65.41 Hz)
-write("bass/C2.wav", tone(65.41, 0.9, [[1, 0.7], [2, 0.25], [3, 0.1]]));
+// sub bass at C2 (65.41 Hz), deep and round with minimal harmonics
+write("bass/C2.wav", tone(65.41, 1.0, [[1, 0.92], [2, 0.12]]));
 // chords at C3 (130.81 Hz), softer attack and longer tail
 write(
   "chords/C3.wav",

@@ -10,15 +10,17 @@ export interface Pad {
   note: string;
 }
 
+// Baile funk / tamborzao kit. Deep surdo kick, clap and snare, three tambor
+// hits for the rolling percussion, a rim click and a high perc.
 export const DRUM_KEYS = [
   "kick",
-  "snare",
-  "hat",
-  "openhat",
   "clap",
+  "snare",
   "rim",
-  "tom",
-  "ride",
+  "tam1",
+  "tam2",
+  "tam3",
+  "perc",
 ] as const;
 
 export const FX_KEYS = ["riser", "impact", "sweep", "downlifter"] as const;

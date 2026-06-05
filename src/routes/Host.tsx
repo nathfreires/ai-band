@@ -18,7 +18,7 @@ import {
 } from "../lib/room";
 import { firebaseReady } from "../lib/firebase";
 
-const DEFAULT_BPM = 124;
+const DEFAULT_BPM = 130;
 const KEY_LABEL = "Cm";
 
 export function Host() {
