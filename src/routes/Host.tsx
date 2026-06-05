@@ -73,7 +73,9 @@ export function Host() {
     } else if (firebaseReady) {
       // Every phone tap is quantized to the host clock before it sounds.
       const offEvents = watchEvents(roomId, (ev) => {
-        const time = Tone.getTransport().nextSubdivision("16n");
+        // Quantize to the next 16th, then nudge slightly so it grooves
+        // instead of sounding robotic.
+        const time = Tone.getTransport().nextSubdivision("16n") + Math.random() * 0.018;
         engine.trigger(ev.instrument, ev.note, time);
       });
       const offSlots = watchSlots(roomId, setSlots);

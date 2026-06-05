@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PadGrid } from "../components/PadGrid";
+import { DrumPads } from "../components/DrumPads";
 import { INSTRUMENT_GLYPH } from "../lib/instruments";
 import { INSTRUMENTS, COLORS } from "../lib/types";
 import type { Instrument, Slots } from "../lib/types";
@@ -193,7 +194,11 @@ export function Join() {
           className="padwrap"
           style={{ "--accent": accent, "--glow": `${accent}99` } as React.CSSProperties}
         >
-          <PadGrid instrument={mine} onTap={tap} />
+          {mine === "drums" ? (
+            <DrumPads onTap={tap} />
+          ) : (
+            <PadGrid instrument={mine} onTap={tap} />
+          )}
         </div>
         <span className="ghost mono">
           ROOM {roomId} // {playerId} // muted controller

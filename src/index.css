@@ -522,6 +522,38 @@ button {
   min-height: 0;
 }
 
+.drum-pads {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.drum-pad {
+  flex-direction: column;
+  gap: 8px;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.drum-pad-label {
+  font-family: var(--mono);
+}
+
+.drum-pad-sub {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+}
+
+.drum-pad:active .drum-pad-sub,
+.drum-pad.flash .drum-pad-sub {
+  color: #07121a;
+}
+
 .pad {
   border: 1px solid var(--line);
   border-radius: 12px;
