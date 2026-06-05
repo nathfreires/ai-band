@@ -22,7 +22,9 @@ export function StageScene({ slots, players, headline, bpm, setRef }: Props) {
   const complete = cast.length === INSTRUMENTS.length;
 
   // Characters scale down as more join so they always fit without overlap.
-  const charWidth = `clamp(92px, min(${(88 / Math.max(cast.length, 1)).toFixed(1)}vw, 30vh), 260px)`;
+  // Size from whichever is tighter, width across the stage or stage height, so
+  // characters always fit on screen without overlap or clipping.
+  const charWidth = `clamp(80px, min(${(84 / Math.max(cast.length, 1)).toFixed(1)}vw, 21vh), 220px)`;
   const beatDur = `${(60 / Math.max(bpm, 1)).toFixed(3)}s`;
 
   return (

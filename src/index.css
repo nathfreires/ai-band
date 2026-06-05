@@ -430,7 +430,7 @@ button {
 .char-figure {
   position: relative;
   width: var(--cw);
-  height: calc(var(--cw) * 1.85);
+  height: calc(var(--cw) * 1.6);
 }
 
 .char-body {
@@ -439,7 +439,7 @@ button {
   left: 50%;
   transform: translateX(-50%);
   width: var(--cw);
-  height: calc(var(--cw) * 1.25);
+  height: calc(var(--cw) * 1.05);
   border-radius: calc(var(--cw) * 0.45) calc(var(--cw) * 0.45) calc(var(--cw) * 0.22)
     calc(var(--cw) * 0.22);
   background: linear-gradient(180deg, var(--accent), #0a0a0c 165%);
