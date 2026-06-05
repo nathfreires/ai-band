@@ -9,19 +9,11 @@ Regenerate the placeholders any time with:
 
     node tools/generate-samples.mjs
 
-## Drums (Tone.Players, baile funk / tamborzao one shots)
+## Drums
 
-    drums/kick.wav   deep surdo style kick (the baile funk boom)
-    drums/clap.wav   hand clap
-    drums/snare.wav  tight snare
-    drums/rim.wav    rim / click
-    drums/tam1.wav   tamborzao hit, high pitch
-    drums/tam2.wav   tamborzao hit, mid pitch
-    drums/tam3.wav   tamborzao hit, low pitch
-    drums/perc.wav   high percussion accent (agogo / shaker)
-
-The three tamX hits make up the rolling tamborzao percussion line. Record them
-as the same drum tuned to three pitches, or use three different tambor hits.
+Drums are not sample based. They are synthesized directly in Tone.js (kick,
+clap, and tamborzao percussion) through a distortion plus short reverb bus.
+See src/audio/engine.ts. There are no drum files to drop in.
 
 ## FX (Tone.Players, one shots)
 

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import * as Tone from "tone";
 import { getEngine } from "../audio/engine";
 import { startDemo, DEMO_SLOTS } from "../audio/demo";
+import { startTamborzao } from "../audio/patterns";
 import { Waveform } from "../components/Waveform";
 import { QrPanel } from "../components/QrPanel";
 import { INSTRUMENTS, COLORS } from "../lib/types";
@@ -32,10 +33,12 @@ export function Host() {
   const [players, setPlayers] = useState<Players>(emptyPlayers());
   const [beat, setBeat] = useState(-1);
   const [showQr, setShowQr] = useState(false);
+  const [autoBeat, setAutoBeat] = useState(true);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const beatCounter = useRef(0);
   const cleanupRef = useRef<() => void>(() => {});
+  const drumLoopRef = useRef<(() => void) | null>(null);
 
   const joinUrl = `${window.location.origin}/join/${roomId}`;
   const anyoneJoined = INSTRUMENTS.some((inst) => slots[inst]);
@@ -83,13 +86,35 @@ export function Host() {
       cleanups.push(offEvents, offSlots, offPlayers);
     }
 
+    // Built-in tamborzao auto beat the live drum player can tap over.
+    if (!demo && autoBeat) {
+      drumLoopRef.current = startTamborzao(engine);
+    }
+
     setStarted(true);
     cleanupRef.current = () => cleanups.forEach((c) => c());
-  }, [bpm, demo, pulseSection, roomId]);
+  }, [autoBeat, bpm, demo, pulseSection, roomId]);
+
+  const toggleAutoBeat = () => {
+    setAutoBeat((prev) => {
+      const next = !prev;
+      if (started && !demo) {
+        if (next && !drumLoopRef.current) {
+          drumLoopRef.current = startTamborzao(getEngine());
+        } else if (!next && drumLoopRef.current) {
+          drumLoopRef.current();
+          drumLoopRef.current = null;
+        }
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     return () => {
       cleanupRef.current();
+      drumLoopRef.current?.();
+      drumLoopRef.current = null;
       const transport = Tone.getTransport();
       transport.stop();
       transport.cancel();
@@ -147,6 +172,15 @@ export function Host() {
 
         <div className="hostbar-right">
           {demo ? <span className="pill demo-tag mono">DEMO</span> : null}
+          {!demo ? (
+            <button
+              className={`pill mono ${autoBeat ? "pill-on" : ""}`}
+              onClick={toggleAutoBeat}
+              title="Toggle the built-in tamborzao beat"
+            >
+              AUTO BEAT {autoBeat ? "ON" : "OFF"}
+            </button>
+          ) : null}
           <span className="pill mono">
             {firebaseReady ? "RTDB LIVE" : "RTDB OFF"}
           </span>

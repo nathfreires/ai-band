@@ -1,11 +1,12 @@
 import * as Tone from "tone";
 import type { Instrument } from "../lib/types";
 import { PENTATONIC_CHORDS } from "../lib/music";
-import { DRUM_KEYS, FX_KEYS } from "../lib/instruments";
+import { FX_KEYS } from "../lib/instruments";
 
 // Host only audio engine. Phones never instantiate this and never reach the
-// destination. Everything is sample based and routed through a shared reverb
-// plus delay bus. No oscillators are used for final sounds.
+// destination. Melodic instruments and fx are sample based through a shared
+// reverb plus delay bus. Drums are synthesized in Tone.js through a dedicated
+// distortion plus short reverb bus so they sound gritty and punchy.
 export class AudioEngine {
   private master: Tone.Gain;
   private bus: Tone.Gain;
@@ -13,7 +14,15 @@ export class AudioEngine {
   private delay: Tone.FeedbackDelay;
   private analyser: Tone.Analyser;
 
-  private drums: Tone.Players;
+  // Drum bus and synth voices.
+  private drumBus: Tone.Gain;
+  private drumDist: Tone.Distortion;
+  private drumReverb: Tone.Reverb;
+  private kick: Tone.MembraneSynth;
+  private tam: Tone.MembraneSynth;
+  private clapNoise: Tone.NoiseSynth;
+  private clapFilter: Tone.Filter;
+
   private fx: Tone.Players;
   private bass: Tone.Sampler;
   private chords: Tone.Sampler;
@@ -21,7 +30,7 @@ export class AudioEngine {
 
   private loaded = false;
 
-  // Fires the instant a sample is triggered, synced to audio via Tone.Draw.
+  // Fires the instant a voice is triggered, synced to audio via Tone.Draw.
   public onTrigger: ((instrument: Instrument) => void) | null = null;
 
   constructor() {
@@ -36,18 +45,53 @@ export class AudioEngine {
       wet: 0.28,
     }).connect(this.reverb);
 
-    // Dry path plus sends into the effects bus.
+    // Dry path plus sends into the melodic effects bus.
     this.bus = new Tone.Gain(1);
     this.bus.connect(this.master);
     this.bus.connect(this.delay);
 
-    const drumUrls = Object.fromEntries(
-      DRUM_KEYS.map((k) => [k, `${k}.wav`]),
-    );
-    this.drums = new Tone.Players({
-      urls: drumUrls,
-      baseUrl: "/samples/drums/",
-    }).connect(this.bus);
+    // Shared drum bus: distortion for grit, short reverb for a tight room.
+    this.drumReverb = new Tone.Reverb({
+      decay: 0.6,
+      preDelay: 0.005,
+      wet: 0.16,
+    }).connect(this.master);
+    this.drumDist = new Tone.Distortion({
+      distortion: 0.32,
+      oversample: "2x",
+      wet: 0.5,
+    }).connect(this.drumReverb);
+    this.drumBus = new Tone.Gain(1).connect(this.drumDist);
+
+    // Deep punchy kick: fast downward pitch envelope, short decay.
+    this.kick = new Tone.MembraneSynth({
+      pitchDecay: 0.035,
+      octaves: 1.7,
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.001, decay: 0.28, sustain: 0, release: 0.08 },
+    }).connect(this.drumBus);
+    this.kick.volume.value = 3;
+
+    // Tamborzao: tight woody low-mid membrane hit, the "tu".
+    this.tam = new Tone.MembraneSynth({
+      pitchDecay: 0.02,
+      octaves: 0.5,
+      oscillator: { type: "triangle" },
+      envelope: { attack: 0.001, decay: 0.13, sustain: 0, release: 0.03 },
+    }).connect(this.drumBus);
+    this.tam.volume.value = -1;
+
+    // Clap: bandpassed white noise burst with a very fast attack.
+    this.clapFilter = new Tone.Filter({
+      type: "bandpass",
+      frequency: 1800,
+      Q: 1.4,
+    }).connect(this.drumBus);
+    this.clapNoise = new Tone.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.02 },
+    }).connect(this.clapFilter);
+    this.clapNoise.volume.value = -4;
 
     const fxUrls = Object.fromEntries(FX_KEYS.map((k) => [k, `${k}.wav`]));
     this.fx = new Tone.Players({
@@ -74,6 +118,8 @@ export class AudioEngine {
   async start(): Promise<void> {
     await Tone.start();
     await Tone.loaded();
+    // Reverb impulse responses render asynchronously.
+    await Promise.all([this.reverb.ready, this.drumReverb.ready]);
     this.loaded = true;
   }
 
@@ -85,14 +131,42 @@ export class AudioEngine {
     return this.analyser.getValue() as Float32Array;
   }
 
-  // Trigger a sample at an absolute transport time. The caller is responsible
+  // Synthesized baile funk drum hit at an absolute transport time.
+  private triggerDrum(note: string, time: number): void {
+    switch (note) {
+      case "kick":
+        this.kick.triggerAttackRelease(45, "8n", time, 1);
+        break;
+      case "clap":
+        // Layered noise bursts give the clap its characteristic flam.
+        this.clapNoise.triggerAttackRelease("16n", time);
+        this.clapNoise.triggerAttackRelease("16n", time + 0.012);
+        this.clapNoise.triggerAttackRelease("16n", time + 0.024);
+        break;
+      case "tam1":
+        this.tam.triggerAttackRelease(290, "16n", time);
+        break;
+      case "tam2":
+        this.tam.triggerAttackRelease(245, "16n", time);
+        break;
+      case "tam3":
+        this.tam.triggerAttackRelease(205, "16n", time);
+        break;
+      default:
+        // perc / snare / rim and anything else fall back to a tambor hit.
+        this.tam.triggerAttackRelease(245, "16n", time);
+        break;
+    }
+  }
+
+  // Trigger a voice at an absolute transport time. The caller is responsible
   // for quantizing time to the 16th note grid.
   trigger(instrument: Instrument, note: string, time: number): void {
     if (!this.loaded) return;
     try {
       switch (instrument) {
         case "drums":
-          this.drums.player(note).start(time);
+          this.triggerDrum(note, time);
           break;
         case "fx":
           this.fx.player(note).start(time);
@@ -119,7 +193,13 @@ export class AudioEngine {
   }
 
   dispose(): void {
-    this.drums.dispose();
+    this.kick.dispose();
+    this.tam.dispose();
+    this.clapNoise.dispose();
+    this.clapFilter.dispose();
+    this.drumDist.dispose();
+    this.drumReverb.dispose();
+    this.drumBus.dispose();
     this.fx.dispose();
     this.bass.dispose();
     this.chords.dispose();

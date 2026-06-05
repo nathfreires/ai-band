@@ -2,6 +2,9 @@
 // out of the box. These are intentionally simple. Replace the files in
 // public/samples with your own one shots and one note instrument samples.
 //
+// Note: drums are synthesized in Tone.js (see src/audio/engine.ts) and do not
+// use sample files, so none are generated here.
+//
 //   node tools/generate-samples.mjs
 //
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -63,57 +66,7 @@ function write(rel, samples) {
 
 const TAU = Math.PI * 2;
 
-// Baile funk / tamborzao drum kit.
-// Deep surdo style kick with a long body.
-write(
-  "drums/kick.wav",
-  render(0.5, (t, i, n) => {
-    const f = 110 * Math.exp(-t * 18) + 44;
-    const click = noise() * Math.exp(-t * 90) * 0.2;
-    return (Math.sin(TAU * f * t) + click) * env(i, n, 0.001, 0.3) * 0.95;
-  }),
-);
-// Layered clap.
-write(
-  "drums/clap.wav",
-  render(0.2, (t, i, n) => {
-    const burst = Math.floor(t * 95) % 2 === 0 ? 1 : 0.4;
-    return noise() * env(i, n, 0.001, 0.35) * 0.75 * burst;
-  }),
-);
-// Tight snare.
-write(
-  "drums/snare.wav",
-  render(0.2, (t, i, n) => {
-    const tone = Math.sin(TAU * 190 * t) * 0.35;
-    return (noise() * 0.85 + tone) * env(i, n, 0.001, 0.28);
-  }),
-);
-// Rim click.
-write(
-  "drums/rim.wav",
-  render(0.05, (t, i, n) => {
-    return (Math.sin(TAU * 1700 * t) * 0.6 + noise() * 0.4) * env(i, n, 0.0005, 0.12);
-  }),
-);
-// Tamborzao membrane hits at descending pitches with a noise transient.
-const tambor = (freq) =>
-  render(0.16, (t, i, n) => {
-    const f = freq * Math.exp(-t * 14) + freq * 0.6;
-    const skin = noise() * Math.exp(-t * 40) * 0.35;
-    return (Math.sin(TAU * f * t) * 0.8 + skin) * env(i, n, 0.0008, 0.22) * 0.9;
-  });
-write("drums/tam1.wav", tambor(420));
-write("drums/tam2.wav", tambor(300));
-write("drums/tam3.wav", tambor(210));
-// High percussion accent (agogo / shaker style).
-write(
-  "drums/perc.wav",
-  render(0.08, (t, i, n) => {
-    const tone = Math.sin(TAU * 900 * t) * 0.3;
-    return (noise() * 0.7 + tone) * env(i, n, 0.0005, 0.16) * 0.6;
-  }),
-);
+// Drums are synthesized in Tone.js, so no drum samples are generated.
 
 // Melodic one note samples. Tone.Sampler repitches these across the scale.
 function tone(freq, seconds, partials) {

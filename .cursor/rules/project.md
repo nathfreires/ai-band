@@ -26,9 +26,8 @@ alwaysApply: true
 - All triggers quantize to `Tone.Transport` 16th notes. Nothing fires off grid.
 
 ## Audio synthesis
-- Sample based audio only: `Tone.Players` for drums and fx, `Tone.Sampler` for melodic instruments (bass, chords, lead).
-- Everything routes through a shared reverb + delay bus.
-- No raw oscillators for final sounds.
+- Melodic instruments and fx are sample based: `Tone.Sampler` for bass, chords, lead and `Tone.Players` for fx, routed through a shared reverb + delay bus.
+- Drums are the one exception: they are synthesized in Tone.js (kick and tamborzao via `Tone.MembraneSynth`, clap via filtered `Tone.NoiseSynth`) and routed through a dedicated distortion + short reverb bus for grit and punch.
 
 ## Aesthetic (rekordbox / Pioneer DJ)
 - Background `#0d0d0f`.

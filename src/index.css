@@ -74,6 +74,14 @@ button {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 10px;
+  background: none;
+}
+
+.pill-on {
+  color: #07121a;
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 14px rgba(0, 160, 233, 0.6);
 }
 
 /* Host header bar */
