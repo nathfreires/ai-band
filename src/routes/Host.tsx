@@ -179,16 +179,16 @@ export function Host() {
                 } as React.CSSProperties
               }
             >
-              <div className="sec-photo">
+              <div className="sec-avatar">
                 {photo ? (
                   <img src={photo} alt={`${inst} player`} />
                 ) : (
                   <div className="sec-ph" />
                 )}
               </div>
-              <div className="sec-overlay">
-                <span className="sec-name mono">{inst.toUpperCase()}</span>
-                <span className={`sec-owner mono ${owner ? "" : "vacant"}`}>
+              <div className="sec-label">
+                <span className="sec-name">{inst.toUpperCase()}</span>
+                <span className={`sec-owner ${owner ? "" : "vacant"}`}>
                   {owner ? owner : "OPEN"}
                 </span>
               </div>
