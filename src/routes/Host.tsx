@@ -8,8 +8,26 @@ import { DRUM_PADS } from "../audio/drumkit";
 import { Waveform } from "../components/Waveform";
 import { QrPanel } from "../components/QrPanel";
 import { StageScene } from "../components/StageScene";
+import { MemoryCard, type Memory } from "../components/MemoryCard";
 
 const HEADLINE = "CURSOR MIAMI HACKATHON";
+
+function pickAudioMime(): string {
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg;codecs=opus",
+  ];
+  if (typeof MediaRecorder === "undefined") return "";
+  return candidates.find((c) => MediaRecorder.isTypeSupported(c)) ?? "";
+}
+
+function extForMime(mime: string): string {
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  return "webm";
+}
 import { INSTRUMENTS, COLORS } from "../lib/types";
 import type { Instrument, Players, Slots } from "../lib/types";
 import { ROOT_KEY } from "../lib/music";
@@ -39,6 +57,13 @@ export function Host() {
   const [beat, setBeat] = useState(-1);
   const [showQr, setShowQr] = useState(false);
   const [autoBeat, setAutoBeat] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [memory, setMemory] = useState<Memory | null>(null);
+
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const liveRef = useRef({ slots, players });
+  liveRef.current = { slots, players };
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const playingTimers = useRef<Record<string, number>>({});
@@ -133,11 +158,65 @@ export function Host() {
     });
   };
 
+  // Optional memory capture. Records the master output via MediaRecorder. It
+  // is fully separate from the live engine and never auto starts.
+  const toggleMemory = () => {
+    if (recording) {
+      recorderRef.current?.stop();
+      return;
+    }
+    const engine = getEngine();
+    if (!engine.isLoaded() || typeof MediaRecorder === "undefined") return;
+    const mime = pickAudioMime();
+    const recorder = new MediaRecorder(
+      engine.getRecordingStream(),
+      mime ? { mimeType: mime } : undefined,
+    );
+    chunksRef.current = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      const type = recorder.mimeType || mime || "audio/webm";
+      const blob = new Blob(chunksRef.current, { type });
+      const url = URL.createObjectURL(blob);
+      const { slots: s, players: p } = liveRef.current;
+      const band = INSTRUMENTS.filter((inst) => s[inst]).map((inst) => ({
+        instrument: inst,
+        name: p[inst]?.name?.trim() || s[inst] || "",
+        photo: p[inst]?.photo,
+      }));
+      setMemory({
+        url,
+        band,
+        date: new Date(),
+        room: roomId,
+        bpm,
+        keyLabel: KEY_LABEL,
+        ext: extForMime(type),
+      });
+      setRecording(false);
+    };
+    recorder.start();
+    recorderRef.current = recorder;
+    setRecording(true);
+  };
+
+  const closeMemory = () => {
+    setMemory((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  };
+
   useEffect(() => {
     return () => {
       cleanupRef.current();
       drumLoopRef.current?.();
       drumLoopRef.current = null;
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
       const transport = Tone.getTransport();
       transport.stop();
       transport.cancel();
@@ -223,6 +302,15 @@ export function Host() {
           >
             AUTO BEAT {autoBeat ? "ON" : "OFF"}
           </button>
+          {started ? (
+            <button
+              className={`pill mono ${recording ? "pill-rec" : ""}`}
+              onClick={toggleMemory}
+              title="Record a memory of this jam"
+            >
+              {recording ? "STOP MEMORY" : "CAPTURE MEMORY"}
+            </button>
+          ) : null}
           <span className="pill mono">
             {firebaseReady ? "RTDB LIVE" : "RTDB OFF"}
           </span>
@@ -321,6 +409,8 @@ export function Host() {
           </button>
         </div>
       ) : null}
+
+      {memory ? <MemoryCard memory={memory} onClose={closeMemory} /> : null}
     </div>
   );
 }

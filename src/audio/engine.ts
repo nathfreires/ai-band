@@ -197,6 +197,20 @@ export class AudioEngine {
     return this.analyser.getValue() as Float32Array;
   }
 
+  // Optional recording tap on the master output. Lazily created the first time
+  // a memory is captured. Connecting an extra sink does not affect playback or
+  // the speaker output, so it can never break the live engine.
+  private streamDest: MediaStreamAudioDestinationNode | null = null;
+
+  getRecordingStream(): MediaStream {
+    if (!this.streamDest) {
+      const ctx = Tone.getContext().rawContext as unknown as AudioContext;
+      this.streamDest = ctx.createMediaStreamDestination();
+      Tone.connect(this.master, this.streamDest);
+    }
+    return this.streamDest.stream;
+  }
+
   // Synthesized baile funk drum hit at an absolute transport time.
   private triggerDrum(note: string, time: number): void {
     switch (note) {
