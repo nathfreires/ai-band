@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PadGrid } from "../components/PadGrid";
 import { INSTRUMENT_GLYPH } from "../lib/instruments";
@@ -10,15 +10,23 @@ import {
   getPlayerId,
   releaseSlot,
   sendEvent,
+  setPhoto,
   watchSlots,
 } from "../lib/room";
+import { downscaleToDataUrl } from "../lib/image";
 import { firebaseReady } from "../lib/firebase";
+
+type Step = "photo" | "play";
 
 export function Join() {
   const { roomId = "" } = useParams();
   const playerId = useMemo(() => getPlayerId(), []);
   const [slots, setSlots] = useState<Slots>(emptySlots());
   const [mine, setMine] = useState<Instrument | null>(null);
+  const [step, setStep] = useState<Step>("photo");
+  const [photo, setLocalPhoto] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const claimKey = `aiband.claim.${roomId}`;
 
   useEffect(() => {
@@ -29,7 +37,11 @@ export function Join() {
       const saved = localStorage.getItem(claimKey) as Instrument | null;
       setMine((current) => {
         const active = current ?? saved;
-        if (active && next[active] === playerId) return active;
+        if (active && next[active] === playerId) {
+          // Returning player keeps their slot and skips straight to pads.
+          if (!current) setStep("play");
+          return active;
+        }
         if (active && next[active] !== playerId) {
           localStorage.removeItem(claimKey);
           return null;
@@ -46,6 +58,21 @@ export function Join() {
     if (ok) {
       localStorage.setItem(claimKey, inst);
       setMine(inst);
+      setStep("photo");
+      setLocalPhoto("");
+    }
+  };
+
+  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !mine) return;
+    setBusy(true);
+    try {
+      const dataUrl = await downscaleToDataUrl(file, 160, 0.7);
+      setLocalPhoto(dataUrl);
+      setPhoto(roomId, mine, playerId, dataUrl);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -53,6 +80,8 @@ export function Join() {
     if (mine) releaseSlot(roomId, mine, playerId);
     localStorage.removeItem(claimKey);
     setMine(null);
+    setLocalPhoto("");
+    setStep("photo");
   };
 
   const tap = (note: string) => {
@@ -67,6 +96,60 @@ export function Join() {
           Realtime sync is off. Add Firebase env vars to connect this controller.
         </p>
         <div className="code">cp .env.example .env</div>
+      </div>
+    );
+  }
+
+  if (mine && step === "photo") {
+    const accent = COLORS[mine];
+    return (
+      <div
+        className="join"
+        style={{ "--accent": accent, "--glow": `${accent}99` } as React.CSSProperties}
+      >
+        <div className="padhead">
+          <span className="lead">{mine.toUpperCase()}</span>
+          <button className="pill mono" onClick={release}>
+            CHANGE
+          </button>
+        </div>
+
+        <div className="photo-step">
+          <div className={`photo-frame ${photo ? "filled" : ""}`}>
+            {photo ? (
+              <img src={photo} alt="player" />
+            ) : (
+              <span className="photo-ph mono">ADD PHOTO</span>
+            )}
+          </div>
+          <p className="ghost mono">
+            Take a photo so the host can see who is playing {mine}.
+          </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            style={{ display: "none" }}
+            onChange={onPickPhoto}
+          />
+          <div className="photo-actions">
+            <button
+              className="cta"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              {busy ? "PROCESSING" : photo ? "RETAKE" : "TAKE PHOTO"}
+            </button>
+            <button className="pill mono" onClick={() => setStep("play")}>
+              {photo ? "DONE" : "SKIP"}
+            </button>
+          </div>
+        </div>
+
+        <span className="ghost mono">
+          ROOM {roomId} // {playerId} // muted controller
+        </span>
       </div>
     );
   }

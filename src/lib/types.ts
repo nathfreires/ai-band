@@ -22,6 +22,16 @@ export interface BandEvent {
 // One slot per instrument. Holds the player id that claimed it, or null.
 export type Slots = Record<Instrument, string | null>;
 
+// Per instrument player record. Holds the claimer id and a downscaled base64
+// photo thumbnail stored directly in Realtime Database (no Firebase Storage).
+export interface PlayerRecord {
+  id: string;
+  photo?: string;
+  t?: number;
+}
+
+export type Players = Record<Instrument, PlayerRecord | null>;
+
 export interface RoomState {
   slots: Slots;
   events: Record<string, BandEvent>;

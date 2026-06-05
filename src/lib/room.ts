@@ -3,6 +3,8 @@ import {
   onValue,
   onChildAdded,
   push,
+  set,
+  remove,
   runTransaction,
   serverTimestamp,
   query,
@@ -10,7 +12,7 @@ import {
   type Unsubscribe,
 } from "firebase/database";
 import { db } from "./firebase";
-import type { BandEvent, Instrument, Slots } from "./types";
+import type { BandEvent, Instrument, Players, Slots } from "./types";
 import { INSTRUMENTS } from "./types";
 
 export function emptySlots(): Slots {
@@ -38,8 +40,19 @@ export function makeRoomId(): string {
   return Math.random().toString(36).slice(2, 6).toUpperCase();
 }
 
+export function emptyPlayers(): Players {
+  return {
+    drums: null,
+    bass: null,
+    chords: null,
+    lead: null,
+    fx: null,
+  };
+}
+
 const slotsRef = (roomId: string) => ref(db!, `rooms/${roomId}/slots`);
 const eventsRef = (roomId: string) => ref(db!, `rooms/${roomId}/events`);
+const playersRef = (roomId: string) => ref(db!, `rooms/${roomId}/players`);
 
 // Watch all slot claims for a room.
 export function watchSlots(
@@ -52,6 +65,37 @@ export function watchSlots(
     const merged = emptySlots();
     for (const inst of INSTRUMENTS) merged[inst] = value[inst] ?? null;
     cb(merged);
+  });
+}
+
+// Watch player records (id + photo) for a room. Used by the host to render the
+// per instrument sections.
+export function watchPlayers(
+  roomId: string,
+  cb: (players: Players) => void,
+): Unsubscribe {
+  if (!db) return () => {};
+  return onValue(playersRef(roomId), (snap) => {
+    const value = (snap.val() ?? {}) as Players;
+    const merged = emptyPlayers();
+    for (const inst of INSTRUMENTS) merged[inst] = value[inst] ?? null;
+    cb(merged);
+  });
+}
+
+// Phone side. Store a downscaled base64 thumbnail for this player in RTDB. No
+// Firebase Storage is used.
+export function setPhoto(
+  roomId: string,
+  instrument: Instrument,
+  playerId: string,
+  photo: string,
+): void {
+  if (!db) return;
+  void set(ref(db, `rooms/${roomId}/players/${instrument}`), {
+    id: playerId,
+    photo,
+    t: Date.now(),
   });
 }
 
@@ -98,6 +142,7 @@ export function releaseSlot(
   void runTransaction(target, (current) =>
     current === playerId ? null : current,
   );
+  void remove(ref(db, `rooms/${roomId}/players/${instrument}`));
 }
 
 // Phone side. Write a tap. The host owns the clock and quantizes it.
