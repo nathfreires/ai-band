@@ -7,6 +7,9 @@ import { startTamborzao } from "../audio/patterns";
 import { DRUM_PADS } from "../audio/drumkit";
 import { Waveform } from "../components/Waveform";
 import { QrPanel } from "../components/QrPanel";
+import { StageScene } from "../components/StageScene";
+
+const HEADLINE = "CURSOR MIAMI HACKATHON";
 import { INSTRUMENTS, COLORS } from "../lib/types";
 import type { Instrument, Players, Slots } from "../lib/types";
 import { ROOT_KEY } from "../lib/music";
@@ -26,6 +29,7 @@ const KEY_LABEL = "Cm";
 export function Host() {
   const [params] = useSearchParams();
   const demo = params.get("demo") === "1";
+  const view = params.get("view") === "rows" ? "rows" : "stage";
   const [roomId] = useState(() => params.get("room") || makeRoomId());
 
   const [started, setStarted] = useState(false);
@@ -37,6 +41,7 @@ export function Host() {
   const [autoBeat, setAutoBeat] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const playingTimers = useRef<Record<string, number>>({});
   const beatCounter = useRef(0);
   const cleanupRef = useRef<() => void>(() => {});
   const drumLoopRef = useRef<(() => void) | null>(null);
@@ -52,6 +57,12 @@ export function Host() {
     void el.offsetWidth;
     el.classList.add("pulse");
     window.setTimeout(() => el.classList.remove("pulse"), 260);
+    // Keep the equalizer animating for a beat after the last hit.
+    el.classList.add("playing");
+    window.clearTimeout(playingTimers.current[inst]);
+    playingTimers.current[inst] = window.setTimeout(() => {
+      el.classList.remove("playing");
+    }, 600);
   }, []);
 
   // Start the auto player: the full fake band in demo, the tamborzao loop live.
@@ -166,7 +177,7 @@ export function Host() {
     <div className="screen">
       <header className="hostbar">
         <div className="hostbar-left">
-          <span className="brand">AI BAND // HOST</span>
+          <span className="brand">{HEADLINE}</span>
           <div className="readout-inline">
             <div>
               <span className="lbl">BPM</span>
@@ -227,47 +238,58 @@ export function Host() {
         </div>
       </header>
 
-      <div className="stage">
-        {INSTRUMENTS.map((inst) => {
-          const owner = slots[inst];
-          const photo = players[inst]?.photo;
-          const name = players[inst]?.name?.trim();
-          const label = owner ? name || owner : "OPEN";
-          const accent = COLORS[inst];
-          return (
-            <div
-              key={inst}
-              ref={(el) => {
-                sectionRefs.current[inst] = el;
-              }}
-              className={`inst-section ${owner ? "claimed" : "open"}`}
-              style={
-                {
-                  "--accent": accent,
-                  "--glow": `${accent}cc`,
-                } as React.CSSProperties
-              }
-            >
-              <div className="sec-avatar">
-                {photo ? (
-                  <img src={photo} alt={`${inst} player`} />
-                ) : (
-                  <div className="sec-ph" />
-                )}
+      {view === "rows" ? (
+        <div className="stage">
+          {INSTRUMENTS.map((inst) => {
+            const owner = slots[inst];
+            const photo = players[inst]?.photo;
+            const name = players[inst]?.name?.trim();
+            const label = owner ? name || owner : "OPEN";
+            const accent = COLORS[inst];
+            return (
+              <div
+                key={inst}
+                ref={(el) => {
+                  sectionRefs.current[inst] = el;
+                }}
+                className={`inst-section ${owner ? "claimed" : "open"}`}
+                style={
+                  {
+                    "--accent": accent,
+                    "--glow": `${accent}cc`,
+                  } as React.CSSProperties
+                }
+              >
+                <div className="sec-avatar">
+                  {photo ? (
+                    <img src={photo} alt={`${inst} player`} />
+                  ) : (
+                    <div className="sec-ph" />
+                  )}
+                </div>
+                <div className="sec-label">
+                  <span className="sec-name">{inst.toUpperCase()}</span>
+                  <span
+                    className={`sec-owner ${owner ? "" : "vacant"}`}
+                    title={label}
+                  >
+                    {label}
+                  </span>
+                </div>
               </div>
-              <div className="sec-label">
-                <span className="sec-name">{inst.toUpperCase()}</span>
-                <span
-                  className={`sec-owner ${owner ? "" : "vacant"}`}
-                  title={label}
-                >
-                  {label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <StageScene
+          slots={slots}
+          players={players}
+          headline={HEADLINE}
+          setRef={(inst, el) => {
+            sectionRefs.current[inst] = el;
+          }}
+        />
+      )}
 
       {showQr && !demo ? (
         <div className="overlay" onClick={() => setShowQr(false)}>
