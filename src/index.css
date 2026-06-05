@@ -374,7 +374,7 @@ button {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 34%;
+  height: 22%;
 }
 
 .stage-floor::before {
@@ -383,7 +383,7 @@ button {
   bottom: 0;
   left: 4%;
   right: 4%;
-  height: 64%;
+  height: 70%;
   background: linear-gradient(180deg, #16161d 0%, #0a0a0c 100%);
   border-top: 2px solid var(--cyan);
   border-radius: 8px 8px 0 0;
@@ -392,20 +392,22 @@ button {
 
 .stage-cast {
   position: absolute;
-  bottom: 36%;
+  bottom: 13%;
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-evenly;
   align-items: flex-end;
-  padding: 0 4%;
+  gap: 1%;
+  padding: 0 3%;
+  z-index: 2;
 }
 
 .stage-char {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: calc(var(--cw) * 0.05);
   will-change: transform;
 }
 
@@ -418,7 +420,7 @@ button {
     transform: translateY(0) scale(1);
   }
   30% {
-    transform: translateY(-16px) scale(1.07);
+    transform: translateY(-7%) scale(1.07);
   }
   100% {
     transform: translateY(0) scale(1);
@@ -427,8 +429,8 @@ button {
 
 .char-figure {
   position: relative;
-  width: 64px;
-  height: 116px;
+  width: var(--cw);
+  height: calc(var(--cw) * 1.85);
 }
 
 .char-body {
@@ -436,25 +438,26 @@ button {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 64px;
-  height: 80px;
-  border-radius: 30px 30px 16px 16px;
-  background: linear-gradient(180deg, var(--accent), #0a0a0c 160%);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  width: var(--cw);
+  height: calc(var(--cw) * 1.25);
+  border-radius: calc(var(--cw) * 0.45) calc(var(--cw) * 0.45) calc(var(--cw) * 0.22)
+    calc(var(--cw) * 0.22);
+  background: linear-gradient(180deg, var(--accent), #0a0a0c 165%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   transition: box-shadow 0.1s;
 }
 
 .stage-char.playing .char-body {
-  box-shadow: 0 0 34px var(--glow), 0 8px 22px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 46px var(--glow), 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
 .char-icon {
   position: absolute;
-  bottom: 10px;
+  bottom: calc(var(--cw) * 0.16);
   left: 50%;
   transform: translateX(-50%);
-  width: 26px;
-  height: 26px;
+  width: calc(var(--cw) * 0.4);
+  height: calc(var(--cw) * 0.4);
   color: #07121a;
   opacity: 0.85;
 }
@@ -464,13 +467,13 @@ button {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 56px;
-  height: 56px;
+  width: calc(var(--cw) * 0.74);
+  height: calc(var(--cw) * 0.74);
   border-radius: 50%;
   overflow: hidden;
   background: #0a0a0c;
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 18px var(--glow);
+  border: calc(var(--cw) * 0.035) solid var(--accent);
+  box-shadow: 0 0 26px var(--glow);
   z-index: 2;
 }
 
@@ -488,10 +491,10 @@ button {
 }
 
 .char-name {
-  font-size: 12px;
+  font-size: clamp(13px, calc(var(--cw) * 0.12), 24px);
   letter-spacing: 0.06em;
   color: #fff;
-  max-width: 110px;
+  max-width: calc(var(--cw) * 1.2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -501,13 +504,13 @@ button {
 .char-eq {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 22px;
+  gap: calc(var(--cw) * 0.03);
+  height: calc(var(--cw) * 0.26);
 }
 
 .char-eq i {
-  width: 4px;
-  height: 5px;
+  width: calc(var(--cw) * 0.05);
+  height: calc(var(--cw) * 0.06);
   border-radius: 2px;
   background: var(--accent);
   opacity: 0.45;
@@ -533,12 +536,156 @@ button {
 @keyframes eqbar {
   0%,
   100% {
-    height: 5px;
+    height: calc(var(--cw) * 0.06);
     opacity: 0.45;
   }
   50% {
-    height: 22px;
+    height: calc(var(--cw) * 0.26);
     opacity: 1;
+  }
+}
+
+/* Disco celebration: the show turns on when the full band is assembled. */
+.disco-spin {
+  position: absolute;
+  top: -30%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  opacity: 0.14;
+  mix-blend-mode: screen;
+  filter: blur(20px);
+  pointer-events: none;
+  animation: discospin 9s linear infinite;
+  z-index: 0;
+}
+
+.disco-pulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 55% at 50% 38%,
+    rgba(255, 255, 255, 0.1),
+    transparent 70%
+  );
+  animation: discobeat var(--beat-dur) ease-out infinite;
+  z-index: 0;
+}
+
+.disco-ball-wrap {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.disco-ball-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(180deg, transparent, #3a3a44);
+  transform: translateX(-50%);
+}
+
+.disco-ball {
+  width: clamp(56px, 7vw, 104px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #ffffff, #97a3ad 32%, #2c2f3a 72%),
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(255, 255, 255, 0.18) 0deg 12deg,
+      rgba(0, 0, 0, 0.22) 12deg 24deg
+    );
+  background-blend-mode: overlay;
+  box-shadow: 0 0 44px rgba(255, 255, 255, 0.28);
+  animation: discospin 6s linear infinite, discoshimmer var(--beat-dur) ease-in-out infinite;
+}
+
+.stage-scene.disco {
+  background: radial-gradient(120% 90% at 50% 0%, #1a1a24 0%, #0d0d0f 62%);
+}
+
+.stage-scene.disco .stage-light {
+  opacity: 0.32;
+  animation: lightsway 3.2s ease-in-out infinite alternate;
+}
+
+.stage-scene.disco .stage-floor::before {
+  animation: floorcycle calc(var(--beat-dur) * 4) linear infinite;
+}
+
+@keyframes discospin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes discoshimmer {
+  0%,
+  100% {
+    box-shadow: 0 0 40px rgba(0, 160, 233, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(255, 122, 24, 0.45);
+  }
+}
+
+@keyframes discobeat {
+  0% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+  60% {
+    opacity: 0.12;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.12;
+    transform: scale(1);
+  }
+}
+
+@keyframes lightsway {
+  from {
+    transform: translateX(-12%) rotate(-4deg);
+    opacity: 0.22;
+  }
+  to {
+    transform: translateX(12%) rotate(4deg);
+    opacity: 0.4;
+  }
+}
+
+@keyframes floorcycle {
+  0% {
+    border-top-color: var(--cyan);
+  }
+  33% {
+    border-top-color: var(--orange);
+  }
+  66% {
+    border-top-color: #9b59ff;
+  }
+  100% {
+    border-top-color: var(--cyan);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disco-spin,
+  .disco-ball,
+  .disco-pulse,
+  .stage-scene.disco .stage-light,
+  .stage-scene.disco .stage-floor::before {
+    animation: none;
   }
 }
 

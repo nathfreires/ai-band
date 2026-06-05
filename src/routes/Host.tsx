@@ -285,6 +285,7 @@ export function Host() {
           slots={slots}
           players={players}
           headline={HEADLINE}
+          bpm={bpm}
           setRef={(inst, el) => {
             sectionRefs.current[inst] = el;
           }}
