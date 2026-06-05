@@ -1,25 +1,12 @@
 import { useCallback, useRef } from "react";
+import { DRUM_PADS } from "../audio/drumkit";
 
 interface Props {
   onTap: (note: string) => void;
 }
 
-// Live baile funk drum controller. Three large pads the drummer taps to play
-// the beat themselves. KICK and CLAP fire their one shots. PERC fires a
-// tamborzao hit, rotating through the three tambor pitches for a rolling feel.
-// Taps go through the normal event flow and are quantized on the host.
-const TAMS = ["tam1", "tam2", "tam3"];
-
-const PADS = [
-  { label: "KICK", sub: "surdo", note: () => "kick" },
-  { label: "CLAP", sub: "clap", note: () => "clap" },
-  {
-    label: "PERC",
-    sub: "tamborzao",
-    note: () => TAMS[Math.floor(Math.random() * TAMS.length)],
-  },
-];
-
+// Live baile funk drum controller. Eight large pads, all synthesized on the
+// host. Taps go through the normal event flow and are quantized on the host.
 export function DrumPads({ onTap }: Props) {
   const refs = useRef<Record<number, HTMLButtonElement | null>>({});
 
@@ -32,9 +19,9 @@ export function DrumPads({ onTap }: Props) {
 
   return (
     <div className="drum-pads">
-      {PADS.map((pad, i) => (
+      {DRUM_PADS.map((pad, i) => (
         <button
-          key={pad.label}
+          key={pad.id}
           ref={(el) => {
             refs.current[i] = el;
           }}

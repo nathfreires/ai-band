@@ -4,6 +4,7 @@ import * as Tone from "tone";
 import { getEngine } from "../audio/engine";
 import { startDemo, DEMO_SLOTS } from "../audio/demo";
 import { startTamborzao } from "../audio/patterns";
+import { DRUM_PADS } from "../audio/drumkit";
 import { Waveform } from "../components/Waveform";
 import { QrPanel } from "../components/QrPanel";
 import { INSTRUMENTS, COLORS } from "../lib/types";
@@ -120,6 +121,27 @@ export function Host() {
       transport.cancel();
     };
   }, []);
+
+  // Keyboard drum pads on the host so the kit can be played fast.
+  useEffect(() => {
+    if (!started) return;
+    const map = new Map(DRUM_PADS.map((p) => [p.key, p]));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const pad = map.get(e.key.toLowerCase());
+      if (!pad) return;
+      const engine = getEngine();
+      if (!engine.isLoaded()) return;
+      // Quantize to the 16th grid with light humanize, like every tap.
+      const time =
+        Tone.getTransport().nextSubdivision("16n") + Math.random() * 0.018;
+      engine.trigger("drums", pad.note(), time);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [started]);
 
   const nudgeBpm = (delta: number) => {
     setBpm((prev) => {

@@ -22,6 +22,15 @@ export class AudioEngine {
   private tam: Tone.MembraneSynth;
   private clapNoise: Tone.NoiseSynth;
   private clapFilter: Tone.Filter;
+  private snareNoise: Tone.NoiseSynth;
+  private snareFilter: Tone.Filter;
+  private hatNoise: Tone.NoiseSynth;
+  private hatFilter: Tone.Filter;
+  private shakerNoise: Tone.NoiseSynth;
+  private shakerFilter: Tone.Filter;
+  private whistle: Tone.Synth;
+  private vocalNoise: Tone.NoiseSynth;
+  private vocalFilter: Tone.Filter;
 
   private fx: Tone.Players;
   private bass: Tone.Sampler;
@@ -93,6 +102,59 @@ export class AudioEngine {
     }).connect(this.clapFilter);
     this.clapNoise.volume.value = -4;
 
+    // Snare / rim: sharp short noise hit.
+    this.snareFilter = new Tone.Filter({
+      type: "bandpass",
+      frequency: 2000,
+      Q: 0.8,
+    }).connect(this.drumBus);
+    this.snareNoise = new Tone.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.14, sustain: 0, release: 0.02 },
+    }).connect(this.snareFilter);
+    this.snareNoise.volume.value = -6;
+
+    // Hat: very short high filtered noise.
+    this.hatFilter = new Tone.Filter({ type: "highpass", frequency: 7000 }).connect(
+      this.drumBus,
+    );
+    this.hatNoise = new Tone.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.01 },
+    }).connect(this.hatFilter);
+    this.hatNoise.volume.value = -10;
+
+    // Shaker / ganza: soft sustained filtered noise.
+    this.shakerFilter = new Tone.Filter({
+      type: "highpass",
+      frequency: 5000,
+    }).connect(this.drumBus);
+    this.shakerNoise = new Tone.NoiseSynth({
+      noise: { type: "pink" },
+      envelope: { attack: 0.02, decay: 0.18, sustain: 0, release: 0.05 },
+    }).connect(this.shakerFilter);
+    this.shakerNoise.volume.value = -11;
+
+    // Whistle / apito: quick high triangle blip.
+    this.whistle = new Tone.Synth({
+      oscillator: { type: "triangle" },
+      envelope: { attack: 0.004, decay: 0.12, sustain: 0, release: 0.04 },
+    }).connect(this.drumBus);
+    this.whistle.volume.value = -9;
+
+    // Vocal stab: short percussive "ha", a pitched noise burst with a vowel
+    // like filter movement.
+    this.vocalFilter = new Tone.Filter({
+      type: "bandpass",
+      frequency: 1000,
+      Q: 3,
+    }).connect(this.drumBus);
+    this.vocalNoise = new Tone.NoiseSynth({
+      noise: { type: "pink" },
+      envelope: { attack: 0.005, decay: 0.13, sustain: 0, release: 0.03 },
+    }).connect(this.vocalFilter);
+    this.vocalNoise.volume.value = -5;
+
     const fxUrls = Object.fromEntries(FX_KEYS.map((k) => [k, `${k}.wav`]));
     this.fx = new Tone.Players({
       urls: fxUrls,
@@ -152,8 +214,29 @@ export class AudioEngine {
       case "tam3":
         this.tam.triggerAttackRelease(205, "16n", time);
         break;
+      case "snare":
+      case "rim":
+        this.snareNoise.triggerAttackRelease("16n", time);
+        break;
+      case "hat":
+        this.hatNoise.triggerAttackRelease("32n", time);
+        break;
+      case "shaker":
+        this.shakerNoise.triggerAttackRelease("8n", time);
+        break;
+      case "whistle":
+        // Two quick blips give the apito its trill.
+        this.whistle.triggerAttackRelease(2300, "32n", time);
+        this.whistle.triggerAttackRelease(2650, "32n", time + 0.05);
+        break;
+      case "vocal": {
+        this.vocalFilter.frequency.setValueAtTime(800, time);
+        this.vocalFilter.frequency.linearRampToValueAtTime(1400, time + 0.08);
+        this.vocalNoise.triggerAttackRelease("16n", time);
+        break;
+      }
       default:
-        // perc / snare / rim and anything else fall back to a tambor hit.
+        // perc and anything else fall back to a tambor hit.
         this.tam.triggerAttackRelease(245, "16n", time);
         break;
     }
@@ -197,6 +280,15 @@ export class AudioEngine {
     this.tam.dispose();
     this.clapNoise.dispose();
     this.clapFilter.dispose();
+    this.snareNoise.dispose();
+    this.snareFilter.dispose();
+    this.hatNoise.dispose();
+    this.hatFilter.dispose();
+    this.shakerNoise.dispose();
+    this.shakerFilter.dispose();
+    this.whistle.dispose();
+    this.vocalNoise.dispose();
+    this.vocalFilter.dispose();
     this.drumDist.dispose();
     this.drumReverb.dispose();
     this.drumBus.dispose();
